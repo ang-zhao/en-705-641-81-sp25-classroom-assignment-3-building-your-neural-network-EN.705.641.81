@@ -113,14 +113,26 @@ Defining our First PyTorch Model
 
 
 class SentimentClassifier(nn.Module):
-    def __init__(self, embed_dim: int, num_classes: int, hidden_dims: List[int]):
+    def __init__(self, embed_dim: int, num_classes: int, hidden_dims: List[int], activation: str = 'sigmoid'):
         super().__init__()
         self.embed_dim = embed_dim
         self.num_classes = num_classes
 
         # activation function
-        self.activation = nn.Sigmoid()
-
+        match activation:
+            case 'sigmoid':
+                self.activation = nn.Sigmoid()
+            case 'relu':
+                self.activation = nn.ReLU()
+            case 'gelu':
+                self.activation = nn.GELU()
+            case 'tanh':
+                self.activation = nn.Tanh()
+            case 'elu':
+                self.activation = nn.ELU()
+            case _:
+                raise ValueError(f"Unknown activation type: {activation_type}")
+            
         # linear layers for the MLP
         self.linears = nn.ModuleList()
         # TODO: define the MLP given the hidden dimensions
@@ -282,8 +294,11 @@ def run_mlp(config: easydict.EasyDict,
     dev_dataloader = create_dataloader(dev_dataset, config.batch_size, shuffle=False)
     test_dataloader = create_dataloader(test_dataset, config.batch_size, shuffle=False)
 
+    if "activation" not in config:
+        config.activation = 'sigmoid'
+
     print(f"{'-' * 10} Load Model {'-' * 10}")
-    model = SentimentClassifier(embeddings.vector_size, config.num_classes, config.hidden_dims)
+    model = SentimentClassifier(embeddings.vector_size, config.num_classes, config.hidden_dims, config.activation)
     # define optimizer that manages the model's parameters and gradient updates
     # we will learn more about optimizers in future lectures and homework
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
